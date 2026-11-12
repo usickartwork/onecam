@@ -1,51 +1,41 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 interface Props {
-  onCapture: () => Promise<void>;
+  onCapture: () => Promise<void> | void;
   disabled?: boolean;
+  screenFlash?: boolean;
 }
 
-export function ShutterButton({ onCapture, disabled }: Props) {
+export function ShutterButton({ onCapture, disabled, screenFlash }: Props) {
   const [flash, setFlash] = useState(false);
-  const flashRef = useRef<HTMLDivElement>(null);
 
   const handleClick = async () => {
     if (disabled) return;
-    // Trigger flash
     setFlash(true);
-    setTimeout(() => setFlash(false), 300);
+    setTimeout(() => setFlash(false), screenFlash ? 350 : 220);
     await onCapture();
   };
 
   return (
     <>
-      {/* Flash overlay */}
       {flash && (
         <div
-          ref={flashRef}
-          className="fixed inset-0 bg-white pointer-events-none z-50 shutter-flash"
+          className={`fixed inset-0 bg-white pointer-events-none z-50 ${
+            screenFlash ? "opacity-95 transition-opacity duration-300" : "shutter-flash"
+          }`}
         />
       )}
 
       <button
+        type="button"
         onClick={handleClick}
         disabled={disabled}
         aria-label="Take photo"
-        className={`
-          relative flex items-center justify-center
-          w-20 h-20 rounded-full
-          border-4 border-white/80
-          bg-white/10
-          hover:bg-white/20
-          active:scale-95
-          transition-all duration-100
-          disabled:opacity-40 disabled:cursor-not-allowed
-          shadow-lg
-        `}
+        className="relative flex items-center justify-center w-[74px] h-[74px] rounded-full border-[3px] border-white/25 bg-black p-[5px] active:scale-95 transition-transform duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <div className="w-14 h-14 rounded-full bg-white/90 hover:bg-white transition-colors" />
+        <span className="w-full h-full rounded-full bg-white hover:bg-white/95 transition-colors block" />
       </button>
     </>
   );

@@ -118,6 +118,23 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement | null>) {
     startCamera(nextFacing);
   }, [state.facing, startCamera]);
 
+  const setTorch = useCallback(async (enabled: boolean): Promise<boolean> => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return false;
+    try {
+      const caps = track.getCapabilities?.() as
+        | (MediaTrackCapabilities & { torch?: boolean })
+        | undefined;
+      if (!caps?.torch) return false;
+      await track.applyConstraints({
+        advanced: [{ torch: enabled } as MediaTrackConstraintSet],
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Start on mount
   useEffect(() => {
     startCamera("environment");
@@ -125,5 +142,5 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement | null>) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { state, startCamera, switchCamera, stopStream, streamRef };
+  return { state, startCamera, switchCamera, stopStream, setTorch, streamRef };
 }

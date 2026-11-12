@@ -39,10 +39,14 @@ function FilterThumb({
       }
     };
 
-    // Draw once and also on play
+    // Draw once and also when video frame becomes ready
     draw();
     video.addEventListener("play", draw);
-    return () => video.removeEventListener("play", draw);
+    video.addEventListener("loadeddata", draw);
+    return () => {
+      video.removeEventListener("play", draw);
+      video.removeEventListener("loadeddata", draw);
+    };
   }, [filter, videoRef]);
 
   return (
@@ -67,7 +71,7 @@ function FilterThumb({
         />
         {filter.id === "original" && (
           <div className="absolute inset-0 flex items-center justify-center bg-[#1e1e1e]">
-            <span className="text-white/40 text-xs">●</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-white/40 block" />
           </div>
         )}
       </div>

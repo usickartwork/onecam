@@ -36,6 +36,15 @@ export interface CameraState {
 
 // ─── Adjustment values ───────────────────────────────────────────────────────
 
+export type FlashMode = "off" | "auto" | "on";
+
+export type TimerSeconds = 0 | 3 | 5 | 10;
+
+export type ZoomPreset = {
+  focal: 26 | 35 | 50;
+  scale: number;
+};
+
 export interface ImageAdjustments {
   brightness: number; // 0–200, default 100
   contrast: number;   // 0–200, default 100
