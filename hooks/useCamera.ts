@@ -31,6 +31,11 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement | null>) {
   });
 
   const streamRef = useRef<MediaStream | null>(null);
+  const facingRef = useRef<CameraFacing>("environment");
+
+  useEffect(() => {
+    facingRef.current = state.facing;
+  }, [state.facing]);
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {
@@ -135,6 +140,26 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement | null>) {
     }
   }, []);
 
+  const ensureActive = useCallback(async () => {
+    const stream = streamRef.current;
+    const hasLiveTrack =
+      stream !== null &&
+      stream.getVideoTracks().some((t) => t.readyState === "live");
+
+    if (hasLiveTrack && videoRef.current) {
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream;
+      }
+      if (videoRef.current.paused) {
+        await videoRef.current.play().catch(() => {});
+      }
+      return;
+    }
+
+    // Stream ended while backgrounded/in picker; re-initialize current camera
+    await startCamera(facingRef.current);
+  }, [startCamera, videoRef]);
+
   // Start on mount
   useEffect(() => {
     startCamera("environment");
@@ -142,5 +167,13 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement | null>) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { state, startCamera, switchCamera, stopStream, setTorch, streamRef };
+  return {
+    state,
+    startCamera,
+    switchCamera,
+    stopStream,
+    setTorch,
+    ensureActive,
+    streamRef,
+  };
 }

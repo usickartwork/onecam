@@ -42,7 +42,7 @@ export default function DazzCam() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { state: camState, switchCamera, startCamera, setTorch } =
+  const { state: camState, switchCamera, startCamera, setTorch, ensureActive } =
     useCamera(videoRef);
 
   // ── Core app state ─────────────────────────────────────────────────────────
@@ -218,7 +218,19 @@ export default function DazzCam() {
     setScreen("camera");
     setCapturedDataUrl(null);
     setCapturedBlob(null);
-  }, []);
+    void ensureActive();
+  }, [ensureActive]);
+
+  // Resume camera stream if returning from background or OS file picker
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && screen === "camera") {
+        void ensureActive();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [screen, ensureActive]);
 
   // ── Re-open last captured photo ────────────────────────────────────────────
   const handleOpenLastPhoto = useCallback(() => {
@@ -249,20 +261,7 @@ export default function DazzCam() {
     });
   };
 
-  // ── Preview screen ─────────────────────────────────────────────────────────
-  if (screen === "preview" && capturedDataUrl && capturedBlob) {
-    return (
-      <div className="camera-screen bg-[#000000]">
-        <PhotoPreview
-          dataUrl={capturedDataUrl}
-          blob={capturedBlob}
-          onRetake={handleRetake}
-        />
-      </div>
-    );
-  }
-
-  // ── Camera screen ──────────────────────────────────────────────────────────
+  // ── Camera screen (kept mounted so <video> stream never drops on Retake) ───
   return (
     <div className="camera-screen bg-black flex flex-col">
       <input
@@ -636,6 +635,17 @@ export default function DazzCam() {
               videoRef={videoRef}
             />
           </div>
+        </div>
+      )}
+
+      {/* ── Photo Preview Overlay ── */}
+      {screen === "preview" && capturedDataUrl && capturedBlob && (
+        <div className="camera-screen z-50 bg-[#000000]">
+          <PhotoPreview
+            dataUrl={capturedDataUrl}
+            blob={capturedBlob}
+            onRetake={handleRetake}
+          />
         </div>
       )}
     </div>
