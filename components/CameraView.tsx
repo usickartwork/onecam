@@ -14,24 +14,23 @@ interface Props {
 export const CameraView = forwardRef<HTMLVideoElement, Props>(
   ({ status, errorMessage, cssFilter, onRetry }, ref) => {
     return (
-      <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
-        {/* Live video */}
+      <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
+        {/* Live video — edge-to-edge cover without distortion */}
         <video
           ref={ref}
           autoPlay
           playsInline
           muted
-          className="w-full h-full object-cover"
+          className="camera-preview"
           style={{
             filter: cssFilter,
             display: status === "active" ? "block" : "none",
-            transform: "scaleX(1)",
           }}
         />
 
         {/* Overlay states */}
         {status !== "active" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-8 text-center bg-black/90">
             {status === "requesting" || status === "idle" ? (
               <>
                 <Loader2 size={40} className="text-white/60 animate-spin" />
@@ -76,10 +75,8 @@ export const CameraView = forwardRef<HTMLVideoElement, Props>(
         {/* Viewfinder corners */}
         {status === "active" && (
           <>
-            <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-white/30 rounded-tl pointer-events-none" />
-            <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-white/30 rounded-tr pointer-events-none" />
-            <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-white/30 rounded-bl pointer-events-none" />
-            <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-white/30 rounded-br pointer-events-none" />
+            <div className="absolute top-16 left-4 w-6 h-6 border-t-2 border-l-2 border-white/25 rounded-tl pointer-events-none" />
+            <div className="absolute top-16 right-4 w-6 h-6 border-t-2 border-r-2 border-white/25 rounded-tr pointer-events-none" />
           </>
         )}
       </div>

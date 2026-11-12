@@ -68,7 +68,7 @@ export default function DazzCam() {
   // ── Preview screen ─────────────────────────────────────────────────────────
   if (screen === "preview" && capturedDataUrl && capturedBlob) {
     return (
-      <div className="fixed inset-0 bg-[#0a0a0a]">
+      <div className="camera-screen bg-[#0a0a0a]">
         <PhotoPreview
           dataUrl={capturedDataUrl}
           blob={capturedBlob}
@@ -80,92 +80,89 @@ export default function DazzCam() {
 
   // ── Camera screen ──────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 bg-[#0a0a0a] flex flex-col overflow-hidden">
-      {/* ── Top bar ── */}
-      <div className="flex items-center justify-between px-4 pt-safe pt-3 pb-2 z-10">
+    <div className="camera-screen">
+      {/* ── Fullscreen live camera preview ── */}
+      <CameraView
+        ref={videoRef}
+        status={camState.status}
+        errorMessage={camState.errorMessage}
+        cssFilter={liveStyle}
+        onRetry={() => startCamera(camState.facing)}
+      />
+
+      {/* ── Top overlay bar ── */}
+      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between pt-safe px-safe pb-6 bg-gradient-to-b from-black/60 via-black/25 to-transparent pointer-events-none">
         <div className="w-10" /> {/* spacer */}
         <span
-          className="text-white font-bold tracking-[0.25em] text-sm uppercase"
+          className="text-white font-bold tracking-[0.25em] text-sm uppercase drop-shadow-sm"
           aria-label="DAZZCAM"
         >
           DAZZCAM
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pointer-events-auto">
           <button
             onClick={() => setShowControls((s) => !s)}
             aria-label="Toggle adjustments"
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 hover:bg-white/20 active:bg-white/30 transition-colors"
           >
             <Settings size={18} className="text-white" />
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* ── Camera viewfinder ── */}
-      <div className="relative flex-1 overflow-hidden">
-        <CameraView
-          ref={videoRef}
-          status={camState.status}
-          errorMessage={camState.errorMessage}
-          cssFilter={liveStyle}
-          onRetry={() => startCamera(camState.facing)}
-        />
+      {/* ── Bottom overlay controls ── */}
+      <div className="absolute bottom-0 inset-x-0 z-10 pt-10 pb-safe px-safe bg-gradient-to-t from-black/85 via-black/50 to-transparent pointer-events-none max-h-[85dvh] overflow-y-auto">
+        <div className="w-full max-w-lg mx-auto flex flex-col gap-2.5 [@media(orientation:landscape)_and_(max-height:540px)]:gap-1.5 pointer-events-auto">
+          {/* Collapsible adjustments */}
+          {showControls && (
+            <div className="px-4 py-2.5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10">
+              <ImageAdjustments
+                brightness={adjustments.brightness}
+                contrast={adjustments.contrast}
+                onBrightnessChange={(v) =>
+                  setAdjustments((a) => ({ ...a, brightness: v }))
+                }
+                onContrastChange={(v) =>
+                  setAdjustments((a) => ({ ...a, contrast: v }))
+                }
+              />
+            </div>
+          )}
 
-        {/* Camera switch overlay */}
-        {camState.status === "active" && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <CameraSwitch
-              facing={camState.facing}
-              onSwitch={switchCamera}
-              disabled={camState.status !== "active"}
-            />
+          {/* Filter intensity */}
+          <div className="px-1">
+            <FilterIntensity intensity={filterIntensity} onChange={setFilterIntensity} />
           </div>
-        )}
-      </div>
 
-      {/* ── Bottom controls ── */}
-      <div className="flex flex-col gap-3 bg-[#0a0a0a] border-t border-white/5 pt-3 pb-safe pb-5">
-
-        {/* Collapsible adjustments */}
-        {showControls && (
-          <div className="px-5 pb-2 border-b border-white/5">
-            <ImageAdjustments
-              brightness={adjustments.brightness}
-              contrast={adjustments.contrast}
-              onBrightnessChange={(v) =>
-                setAdjustments((a) => ({ ...a, brightness: v }))
-              }
-              onContrastChange={(v) =>
-                setAdjustments((a) => ({ ...a, contrast: v }))
-              }
-            />
-          </div>
-        )}
-
-        {/* Filter intensity */}
-        <div className="px-5">
-          <FilterIntensity intensity={filterIntensity} onChange={setFilterIntensity} />
-        </div>
-
-        {/* Filter strip */}
-        <FilterSelector
-          selectedId={selectedFilterId}
-          onSelect={setSelectedFilterId}
-          videoRef={videoRef}
-        />
-
-        {/* Shutter row */}
-        <div className="flex items-center justify-center px-4 mt-1">
-          <ShutterButton
-            onCapture={handleCapture}
-            disabled={camState.status !== "active" || capturing}
+          {/* Filter strip */}
+          <FilterSelector
+            selectedId={selectedFilterId}
+            onSelect={setSelectedFilterId}
+            videoRef={videoRef}
           />
-        </div>
 
-        {/* Privacy statement */}
-        <p className="text-white/20 text-[9px] text-center px-6 leading-relaxed">
-          Your photos stay on your device. DAZZCAM does not upload or store your photos on our servers.
-        </p>
+          {/* Shutter row with Camera Switch */}
+          <div className="relative flex items-center justify-center mt-0.5">
+            <ShutterButton
+              onCapture={handleCapture}
+              disabled={camState.status !== "active" || capturing}
+            />
+            {camState.status === "active" && (
+              <div className="absolute right-2">
+                <CameraSwitch
+                  facing={camState.facing}
+                  onSwitch={switchCamera}
+                  disabled={camState.status !== "active"}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Privacy statement */}
+          <p className="text-white/40 text-[9px] text-center px-4 leading-relaxed">
+            Your photos stay on your device. DAZZCAM does not upload or store your photos on our servers.
+          </p>
+        </div>
       </div>
     </div>
   );

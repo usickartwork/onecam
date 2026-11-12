@@ -59,16 +59,32 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement | null>) {
       setState((s) => ({ ...s, status: "requesting", errorMessage: null, facing }));
 
       try {
+        // Use flexible constraints so the browser selects the best native
+        // resolution and orientation without forcing a square/fixed aspect ratio.
         const constraints: MediaStreamConstraints = {
           video: {
-            facingMode: facing,
+            facingMode: { ideal: facing },
             width: { ideal: 1920 },
-            height: { ideal: 1080 },
           },
           audio: false,
         };
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (primaryErr) {
+          if (
+            primaryErr instanceof DOMException &&
+            primaryErr.name === "OverconstrainedError"
+          ) {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: { ideal: facing } },
+              audio: false,
+            });
+          } else {
+            throw primaryErr;
+          }
+        }
         streamRef.current = stream;
 
         if (videoRef.current) {
